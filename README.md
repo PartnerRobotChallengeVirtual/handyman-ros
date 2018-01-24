@@ -1,6 +1,6 @@
 # ROS Package for Handyman
 
-This project is ROS package for the competition of Handyman.
+This project is ROS package for the Handyman task of the Partner Robot Challenge (Virtual Space) in the World Robot Competition.
 
 ## Prerequisites
 
