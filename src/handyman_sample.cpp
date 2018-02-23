@@ -182,7 +182,7 @@ private:
   {
     ros::Duration duration;
     duration.sec = 2;
-    std::vector<double> gripper_positions { 0.0, 0.0 };
+    std::vector<double> gripper_positions { -0.05, +0.05 };
     gripper_joint_trajectory_.points[0].positions = gripper_positions;
     gripper_joint_trajectory_.points[0].time_from_start = duration;
 

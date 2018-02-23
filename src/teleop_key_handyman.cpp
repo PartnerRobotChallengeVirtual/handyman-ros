@@ -176,8 +176,8 @@ void HandymanTeleopKey::moveHand(ros::Publisher &publisher, bool is_hand_open)
   if(is_hand_open)
   {
     ROS_DEBUG("Grasp");
-    positions.push_back(0.0);
-    positions.push_back(0.0);
+    positions.push_back(-0.05);
+    positions.push_back(+0.05);
   }
   else
   {
