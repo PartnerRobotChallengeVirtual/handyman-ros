@@ -25,7 +25,9 @@ private:
   static const char KEYCODE_C = 0x63;
   static const char KEYCODE_G = 0x67;
   static const char KEYCODE_H = 0x68;
+  static const char KEYCODE_I = 0x69;
   static const char KEYCODE_J = 0x6a;
+  static const char KEYCODE_K = 0x6b;
   static const char KEYCODE_M = 0x6d;
 
   static const char KEYCODE_Q = 0x71;
@@ -203,10 +205,13 @@ void HandymanTeleopKey::moveHand(ros::Publisher &publisher, bool is_hand_open)
 
 void HandymanTeleopKey::showHelp()
 {
-  puts("Operate from keyboard");
+  puts("Operate from Keyboard");
   puts("---------------------------");
   puts("arrow keys : Move HSR");
   puts("s          : Stop HSR");
+  puts("---------------------------");
+  puts("i : Move Speed Up");
+  puts("k : Move Speed down");
   puts("---------------------------");
   puts("u : Move Arm Up");
   puts("j : Stop Arm");
@@ -216,13 +221,13 @@ void HandymanTeleopKey::showHelp()
   puts("b : Rotate Arm - Horizontal");
   puts("c : Rotate Arm - Low position");
   puts("---------------------------");
-  puts("g : Grasp/Open hand");
+  puts("g : Grasp/Open Hand");
   puts("---------------------------");
   puts(("1 : Send "+MSG_ROOM_REACHED).c_str());
   puts(("2 : Send "+MSG_OBJECT_GRASPED).c_str());
   puts(("3 : Send "+MSG_TASK_FINISHED).c_str());
   puts("---------------------------");
-  puts("h : Show help");
+  puts("h : Show Help");
 }
 
 int HandymanTeleopKey::run(int argc, char **argv)
@@ -278,7 +283,7 @@ int HandymanTeleopKey::run(int argc, char **argv)
   ros::Publisher  pub_arm_trajectory     = node_handle.advertise<trajectory_msgs::JointTrajectory>(pub_arm_trajectory_topic_name, 10);
   ros::Publisher  pub_gripper_trajectory = node_handle.advertise<trajectory_msgs::JointTrajectory>(pub_gripper_trajectory_topic_name, 10);
 
-
+  float move_speed = 1.0f;
   bool is_hand_open = false;
 
   std::string arm_lift_joint_name   = "arm_lift_joint";
@@ -322,32 +327,46 @@ int HandymanTeleopKey::run(int argc, char **argv)
         }
         case KEYCODE_UP:
         {
-          ROS_DEBUG("Go forward");
-          moveBase(pub_base_twist, +1.0, 0.0);
+          ROS_DEBUG("Go Forward");
+          moveBase(pub_base_twist, +0.2 * move_speed, 0.0);
           break;
         }
         case KEYCODE_DOWN:
         {
-          ROS_DEBUG("Go back");
-          moveBase(pub_base_twist, -1.0, 0.0);
+          ROS_DEBUG("Go Back");
+          moveBase(pub_base_twist, -0.2 * move_speed, 0.0);
           break;
         }
         case KEYCODE_RIGHT:
         {
-          ROS_DEBUG("Go right");
-          moveBase(pub_base_twist, 0.0, -1.0);
+          ROS_DEBUG("Go Right");
+          moveBase(pub_base_twist, 0.0, -0.5 * move_speed);
           break;
         }
         case KEYCODE_LEFT:
         {
-          ROS_DEBUG("Go left");
-          moveBase(pub_base_twist, 0.0, +1.0);
+          ROS_DEBUG("Go Left");
+          moveBase(pub_base_twist, 0.0, +0.5 * move_speed);
           break;
         }
         case KEYCODE_S:
         {
           ROS_DEBUG("Stop");
           moveBase(pub_base_twist, 0.0, 0.0);
+          break;
+        }
+        case KEYCODE_I:
+        {
+          ROS_DEBUG("Move Speed Up");
+          move_speed *= 2;
+          if(move_speed > 2  ){ move_speed=2; }
+          break;
+        }
+        case KEYCODE_K:
+        {
+          ROS_DEBUG("Move Speed Down");
+          move_speed /= 2;
+          if(move_speed < 0.125){ move_speed=0.125; }
           break;
         }
         case KEYCODE_U:
