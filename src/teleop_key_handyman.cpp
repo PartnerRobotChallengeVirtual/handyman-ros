@@ -23,16 +23,24 @@ private:
   static const char KEYCODE_A = 0x61;
   static const char KEYCODE_B = 0x62;
   static const char KEYCODE_C = 0x63;
+  static const char KEYCODE_D = 0x64;
   static const char KEYCODE_G = 0x67;
   static const char KEYCODE_H = 0x68;
   static const char KEYCODE_I = 0x69;
   static const char KEYCODE_J = 0x6a;
   static const char KEYCODE_K = 0x6b;
+  static const char KEYCODE_L = 0x6c;
   static const char KEYCODE_M = 0x6d;
-
+  static const char KEYCODE_N = 0x6e;
+  static const char KEYCODE_O = 0x6f;
   static const char KEYCODE_Q = 0x71;
   static const char KEYCODE_S = 0x73;
   static const char KEYCODE_U = 0x75;
+  static const char KEYCODE_Y = 0x79;
+  static const char KEYCODE_Z = 0x7a;
+
+  static const char KEYCODE_COMMA  = 0x2c;
+  static const char KEYCODE_PERIOD = 0x2e;
 
   const std::string ARM_LIFT_JOINT_NAME = "arm_lift_joint";
 
@@ -52,7 +60,7 @@ public:
   void messageCallback(const handyman::HandymanMsg::ConstPtr& message);
   void jointStateCallback(const sensor_msgs::JointState::ConstPtr& joint_state);
   void sendMessage(ros::Publisher &publisher, const std::string &message);
-  void moveBase(ros::Publisher &publisher, double linear_x, double angular_z);
+  void moveBase(ros::Publisher &publisher, double linear_x, double linear_y, double angular_z);
   void moveArm(ros::Publisher &publisher, const std::string &name, const double position, const int duration_sec);
   void moveHand(ros::Publisher &publisher, bool grasp);
 
@@ -114,9 +122,9 @@ void HandymanTeleopKey::jointStateCallback(const sensor_msgs::JointState::ConstP
   {
     if(joint_state->name[i]==ARM_LIFT_JOINT_NAME)
     {
-        arm_lift_joint_pos2_ = arm_lift_joint_pos1_;
-        arm_lift_joint_pos1_ = joint_state->position[i];
-//      ROS_INFO("lift:%lf",armLiftJointPos_);
+      arm_lift_joint_pos2_ = arm_lift_joint_pos1_;
+      arm_lift_joint_pos1_ = joint_state->position[i];
+//    ROS_INFO("lift:%lf",armLiftJointPos_);
       return;
     }
   }
@@ -131,12 +139,12 @@ void HandymanTeleopKey::sendMessage(ros::Publisher &publisher, const std::string
   publisher.publish(handyman_msg);
 }
 
-void HandymanTeleopKey::moveBase(ros::Publisher &publisher, double linear_x, double angular_z)
+void HandymanTeleopKey::moveBase(ros::Publisher &publisher, double linear_x, double linear_y, double angular_z)
 {
   geometry_msgs::Twist twist;
 
   twist.linear.x  = linear_x;
-  twist.linear.y  = 0.0;
+  twist.linear.y  = linear_y;
   twist.linear.z  = 0.0;
   twist.angular.x = 0.0;
   twist.angular.y = 0.0;
@@ -205,29 +213,32 @@ void HandymanTeleopKey::moveHand(ros::Publisher &publisher, bool is_hand_open)
 
 void HandymanTeleopKey::showHelp()
 {
-  puts("Operate from Keyboard");
+  puts("Operate by Keyboard");
   puts("---------------------------");
   puts("arrow keys : Move HSR");
   puts("s          : Stop HSR");
   puts("---------------------------");
-  puts("i : Move Speed Up");
-  puts("k : Move Speed down");
+  puts("Move HSR Linearly:");
+  puts("  u   i   o  ");
+  puts("  j   k   l  ");
+  puts("  m   ,   .  ");
   puts("---------------------------");
-  puts("u : Move Arm Up");
-  puts("j : Stop Arm");
-  puts("m : Move Arm Down");
+  puts("q/z : Increase/Decrease Moving Speed");
+  puts("---------------------------");
+  puts("y : Move Arm Up");
+  puts("h : Stop Arm");
+  puts("n : Move Arm Down");
   puts("---------------------------");
   puts("a : Rotate Arm - Vertical");
-  puts("b : Rotate Arm - Horizontal");
-  puts("c : Rotate Arm - Low position");
+  puts("b : Rotate Arm - Upward");
+  puts("c : Rotate Arm - Horizontal");
+  puts("d : Rotate Arm - Downward");
   puts("---------------------------");
   puts("g : Grasp/Open Hand");
   puts("---------------------------");
   puts(("1 : Send "+MSG_ROOM_REACHED).c_str());
   puts(("2 : Send "+MSG_OBJECT_GRASPED).c_str());
   puts(("3 : Send "+MSG_TASK_FINISHED).c_str());
-  puts("---------------------------");
-  puts("h : Show Help");
 }
 
 int HandymanTeleopKey::run(int argc, char **argv)
@@ -283,6 +294,11 @@ int HandymanTeleopKey::run(int argc, char **argv)
   ros::Publisher  pub_arm_trajectory     = node_handle.advertise<trajectory_msgs::JointTrajectory>(pub_arm_trajectory_topic_name, 10);
   ros::Publisher  pub_gripper_trajectory = node_handle.advertise<trajectory_msgs::JointTrajectory>(pub_gripper_trajectory_topic_name, 10);
 
+
+  const float linear_coef         = 0.2f;
+  const float linear_oblique_coef = 0.141f;
+  const float angular_coef        = 0.5f;
+
   float move_speed = 1.0f;
   bool is_hand_open = false;
 
@@ -328,60 +344,114 @@ int HandymanTeleopKey::run(int argc, char **argv)
         case KEYCODE_UP:
         {
           ROS_DEBUG("Go Forward");
-          moveBase(pub_base_twist, +0.2 * move_speed, 0.0);
+          moveBase(pub_base_twist, +linear_coef*move_speed, 0.0, 0.0);
           break;
         }
         case KEYCODE_DOWN:
         {
-          ROS_DEBUG("Go Back");
-          moveBase(pub_base_twist, -0.2 * move_speed, 0.0);
+          ROS_DEBUG("Go Backward");
+          moveBase(pub_base_twist, -linear_coef*move_speed, 0.0, 0.0);
           break;
         }
         case KEYCODE_RIGHT:
         {
           ROS_DEBUG("Go Right");
-          moveBase(pub_base_twist, 0.0, -0.5 * move_speed);
+          moveBase(pub_base_twist, 0.0, 0.0, -angular_coef*move_speed);
           break;
         }
         case KEYCODE_LEFT:
         {
           ROS_DEBUG("Go Left");
-          moveBase(pub_base_twist, 0.0, +0.5 * move_speed);
+          moveBase(pub_base_twist, 0.0, 0.0, +angular_coef*move_speed);
           break;
         }
         case KEYCODE_S:
         {
           ROS_DEBUG("Stop");
-          moveBase(pub_base_twist, 0.0, 0.0);
+          moveBase(pub_base_twist, 0.0, 0.0, 0.0);
+          break;
+        }
+        case KEYCODE_U:
+        {
+          ROS_DEBUG("Move Left Forward");
+          moveBase(pub_base_twist, +linear_oblique_coef*move_speed, +linear_oblique_coef*move_speed, 0.0);
           break;
         }
         case KEYCODE_I:
+        {
+          ROS_DEBUG("Move Forward");
+          moveBase(pub_base_twist, +linear_coef*move_speed, 0.0, 0.0);
+          break;
+        }
+        case KEYCODE_O:
+        {
+          ROS_DEBUG("Move Right Forward");
+          moveBase(pub_base_twist, +linear_oblique_coef*move_speed, -linear_oblique_coef*move_speed, 0.0);
+          break;
+        }
+        case KEYCODE_J:
+        {
+          ROS_DEBUG("Move Left");
+          moveBase(pub_base_twist, 0.0, +linear_coef*move_speed, 0.0);
+          break;
+        }
+        case KEYCODE_K:
+        {
+          ROS_DEBUG("Stop");
+          moveBase(pub_base_twist, 0.0, 0.0, 0.0);
+          break;
+        }
+        case KEYCODE_L:
+        {
+          ROS_DEBUG("Move Right");
+          moveBase(pub_base_twist, 0.0, -linear_coef*move_speed, 0.0);
+          break;
+        }
+        case KEYCODE_M:
+        {
+          ROS_DEBUG("Move Left Backward");
+          moveBase(pub_base_twist, -linear_oblique_coef*move_speed, +linear_oblique_coef*move_speed, 0.0);
+          break;
+        }
+        case KEYCODE_COMMA:
+        {
+          ROS_DEBUG("Move Backward");
+          moveBase(pub_base_twist, -linear_coef*move_speed, 0.0, 0.0);
+          break;
+        }
+        case KEYCODE_PERIOD:
+        {
+          ROS_DEBUG("Move Right Backward");
+          moveBase(pub_base_twist, -linear_oblique_coef*move_speed, -linear_oblique_coef*move_speed, 0.0);
+          break;
+        }
+        case KEYCODE_Q:
         {
           ROS_DEBUG("Move Speed Up");
           move_speed *= 2;
           if(move_speed > 2  ){ move_speed=2; }
           break;
         }
-        case KEYCODE_K:
+        case KEYCODE_Z:
         {
           ROS_DEBUG("Move Speed Down");
           move_speed /= 2;
           if(move_speed < 0.125){ move_speed=0.125; }
           break;
         }
-        case KEYCODE_U:
+        case KEYCODE_Y:
         {
           ROS_DEBUG("Move Arm Up");
           moveArm(pub_arm_trajectory, arm_lift_joint_name, 0.69, std::max<int>((int)(std::abs(0.69 - arm_lift_joint_pos1_) / 0.05), 1));
           break;
         }
-        case KEYCODE_J:
+        case KEYCODE_H:
         {
           ROS_DEBUG("Stop Arm");
           moveArm(pub_arm_trajectory, arm_lift_joint_name, 2.0*arm_lift_joint_pos1_-arm_lift_joint_pos2_, 0.5);
           break;
         }
-        case KEYCODE_M:
+        case KEYCODE_N:
         {
           ROS_DEBUG("Move Arm Down");
           moveArm(pub_arm_trajectory, arm_lift_joint_name, 0.0, std::max<int>((int)(std::abs(0.0 - arm_lift_joint_pos1_) / 0.05), 1));
@@ -396,14 +466,21 @@ int HandymanTeleopKey::run(int argc, char **argv)
         }
         case KEYCODE_B:
         {
+          ROS_DEBUG("Rotate Arm - Upward");
+          moveArm(pub_arm_trajectory, arm_flex_joint_name, -0.785, 1);
+          moveArm(pub_arm_trajectory, wrist_flex_joint_name, -0.785, 1);
+          break;
+        }
+        case KEYCODE_C:
+        {
           ROS_DEBUG("Rotate Arm - Horizontal");
           moveArm(pub_arm_trajectory, arm_flex_joint_name, -1.57, 1);
           moveArm(pub_arm_trajectory, wrist_flex_joint_name, 0.0, 1);
           break;
         }
-        case KEYCODE_C:
+        case KEYCODE_D:
         {
-          ROS_DEBUG("Rotate Arm - Low position");
+          ROS_DEBUG("Rotate Arm - Downward");
           moveArm(pub_arm_trajectory, arm_flex_joint_name, -2.2, 1);
           moveArm(pub_arm_trajectory, wrist_flex_joint_name, 0.35, 1);
           break;
@@ -413,11 +490,6 @@ int HandymanTeleopKey::run(int argc, char **argv)
           moveHand(pub_gripper_trajectory, is_hand_open);
 
           is_hand_open = !is_hand_open;
-          break;
-        }
-        case KEYCODE_H:
-        {
-          showHelp();
           break;
         }
       }
