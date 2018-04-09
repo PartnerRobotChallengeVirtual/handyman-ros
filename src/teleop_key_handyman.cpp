@@ -11,6 +11,7 @@
 class HandymanTeleopKey
 {
 private:
+  static const char KEYCODE_0 = 0x30;
   static const char KEYCODE_1 = 0x31;
   static const char KEYCODE_2 = 0x32;
   static const char KEYCODE_3 = 0x33;
@@ -68,7 +69,6 @@ public:
   int run(int argc, char **argv);
 
 private:
-  
   bool is_received_are_you_ready_;
 
   // Last position and previous position of arm_lift_joint
@@ -108,6 +108,8 @@ int HandymanTeleopKey::canReceive( int fd )
 
 void HandymanTeleopKey::messageCallback(const handyman::HandymanMsg::ConstPtr& message)
 {
+  if(message->message.c_str()==MSG_ARE_YOU_READY && is_received_are_you_ready_){ return; }
+
   ROS_INFO("Subscribe message:%s, %s", message->message.c_str(), message->detail.c_str());
 
   if(message->message.c_str()==MSG_ARE_YOU_READY)
@@ -236,6 +238,7 @@ void HandymanTeleopKey::showHelp()
   puts("---------------------------");
   puts("g : Grasp/Open Hand");
   puts("---------------------------");
+  puts(("0 : Send "+MSG_I_AM_READY).c_str());
   puts(("1 : Send "+MSG_ROOM_REACHED).c_str());
   puts(("2 : Send "+MSG_OBJECT_GRASPED).c_str());
   puts(("3 : Send "+MSG_TASK_FINISHED).c_str());
@@ -308,13 +311,6 @@ int HandymanTeleopKey::run(int argc, char **argv)
 
   while (ros::ok())
   {
-    if(is_received_are_you_ready_)
-    {
-      sendMessage(pub_msg, MSG_I_AM_READY);
-      ROS_INFO("Replied %s", MSG_I_AM_READY.c_str());
-      is_received_are_you_ready_ = false;
-    }
-
     if(canReceive(kfd))
     {
       // get the next event from the keyboard
@@ -326,6 +322,11 @@ int HandymanTeleopKey::run(int argc, char **argv)
 
       switch(c)
       {
+        case KEYCODE_0:
+        {
+          sendMessage(pub_msg, MSG_I_AM_READY);
+          break;
+        }
         case KEYCODE_1:
         {
           sendMessage(pub_msg, MSG_ROOM_REACHED);
