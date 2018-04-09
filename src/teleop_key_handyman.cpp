@@ -45,7 +45,11 @@ private:
 
   const std::string ARM_LIFT_JOINT_NAME = "arm_lift_joint";
 
-  const std::string MSG_ARE_YOU_READY  = "Are_you_ready?";
+  const std::string MSG_ARE_YOU_READY    = "Are_you_ready?";
+  const std::string MSG_ENVIRONMENT      = "Environment";
+  const std::string MSG_TASK_SUCCEEDED   = "Task_succeeded";
+  const std::string MSG_TASK_FAILED      = "Task_failed";
+  const std::string MSG_MISSION_COMPLETE = "Mission_complete";
 
   const std::string MSG_I_AM_READY     = "I_am_ready";
   const std::string MSG_ROOM_REACHED   = "Room_reached";
@@ -70,6 +74,7 @@ public:
 
 private:
   bool is_received_are_you_ready_;
+  bool is_received_environment_;
 
   // Last position and previous position of arm_lift_joint
   double arm_lift_joint_pos1_;
@@ -80,6 +85,7 @@ private:
 HandymanTeleopKey::HandymanTeleopKey()
 {
   is_received_are_you_ready_ = false;
+  is_received_environment_   = false;
 
   arm_lift_joint_pos1_ = 0.0;
   arm_lift_joint_pos2_ = 0.0;
@@ -109,12 +115,17 @@ int HandymanTeleopKey::canReceive( int fd )
 void HandymanTeleopKey::messageCallback(const handyman::HandymanMsg::ConstPtr& message)
 {
   if(message->message.c_str()==MSG_ARE_YOU_READY && is_received_are_you_ready_){ return; }
+  if(message->message.c_str()==MSG_ENVIRONMENT   && is_received_environment_)  { return; }
 
   ROS_INFO("Subscribe message:%s, %s", message->message.c_str(), message->detail.c_str());
 
-  if(message->message.c_str()==MSG_ARE_YOU_READY)
+  if(message->message.c_str()==MSG_ARE_YOU_READY){ is_received_are_you_ready_ = true; }
+  if(message->message.c_str()==MSG_ENVIRONMENT  ){ is_received_environment_   = true; }
+
+  if(message->message.c_str()==MSG_TASK_SUCCEEDED || message->message.c_str()==MSG_TASK_FAILED || message->message.c_str()==MSG_MISSION_COMPLETE)
   {
-    is_received_are_you_ready_ = true;
+    is_received_are_you_ready_ = false;
+    is_received_environment_   = false;
   }
 }
 
