@@ -15,6 +15,7 @@ private:
   static const char KEYCODE_1 = 0x31;
   static const char KEYCODE_2 = 0x32;
   static const char KEYCODE_3 = 0x33;
+  static const char KEYCODE_9 = 0x39;
 
   static const char KEYCODE_UP    = 0x41;
   static const char KEYCODE_DOWN  = 0x42;
@@ -55,6 +56,7 @@ private:
   const std::string MSG_ROOM_REACHED   = "Room_reached";
   const std::string MSG_OBJECT_GRASPED = "Object_grasped";
   const std::string MSG_TASK_FINISHED  = "Task_finished";
+  const std::string MSG_GIVE_UP        = "Give_up";
 
 public:
   HandymanTeleopKey();
@@ -253,6 +255,7 @@ void HandymanTeleopKey::showHelp()
   puts(("1 : Send "+MSG_ROOM_REACHED).c_str());
   puts(("2 : Send "+MSG_OBJECT_GRASPED).c_str());
   puts(("3 : Send "+MSG_TASK_FINISHED).c_str());
+  puts(("9 : Send "+MSG_GIVE_UP).c_str());
 }
 
 int HandymanTeleopKey::run(int argc, char **argv)
@@ -351,6 +354,11 @@ int HandymanTeleopKey::run(int argc, char **argv)
         case KEYCODE_3:
         {
           sendMessage(pub_msg, MSG_TASK_FINISHED);
+          break;
+        }
+        case KEYCODE_9:
+        {
+          sendMessage(pub_msg, MSG_GIVE_UP);
           break;
         }
         case KEYCODE_UP:
