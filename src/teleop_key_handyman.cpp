@@ -15,6 +15,7 @@ private:
   static const char KEYCODE_1 = 0x31;
   static const char KEYCODE_2 = 0x32;
   static const char KEYCODE_3 = 0x33;
+  static const char KEYCODE_6 = 0x36;
   static const char KEYCODE_9 = 0x39;
 
   static const char KEYCODE_UP    = 0x41;
@@ -54,6 +55,7 @@ private:
 
   const std::string MSG_I_AM_READY     = "I_am_ready";
   const std::string MSG_ROOM_REACHED   = "Room_reached";
+  const std::string MSG_DOES_NOT_EXIST = "Does_not_exist";
   const std::string MSG_OBJECT_GRASPED = "Object_grasped";
   const std::string MSG_TASK_FINISHED  = "Task_finished";
   const std::string MSG_GIVE_UP        = "Give_up";
@@ -255,6 +257,7 @@ void HandymanTeleopKey::showHelp()
   puts(("1 : Send "+MSG_ROOM_REACHED).c_str());
   puts(("2 : Send "+MSG_OBJECT_GRASPED).c_str());
   puts(("3 : Send "+MSG_TASK_FINISHED).c_str());
+  puts(("6 : Send "+MSG_DOES_NOT_EXIST).c_str());
   puts(("9 : Send "+MSG_GIVE_UP).c_str());
 }
 
@@ -354,6 +357,11 @@ int HandymanTeleopKey::run(int argc, char **argv)
         case KEYCODE_3:
         {
           sendMessage(pub_msg, MSG_TASK_FINISHED);
+          break;
+        }
+        case KEYCODE_6:
+        {
+          sendMessage(pub_msg, MSG_DOES_NOT_EXIST);
           break;
         }
         case KEYCODE_9:
