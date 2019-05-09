@@ -36,11 +36,10 @@ private:
   const std::string MSG_TASK_FINISHED  = "Task_finished";
 
   trajectory_msgs::JointTrajectory arm_joint_trajectory_;
-  trajectory_msgs::JointTrajectory gripper_joint_trajectory_;
 
   int step_;
 
-  std::string instruction_msg;
+  std::string instruction_msg_;
 
   bool is_started_;
   bool is_finished_;
@@ -56,14 +55,6 @@ private:
     arm_joint_trajectory_.joint_names = arm_joint_names;
     arm_joint_trajectory_.points.push_back(arm_joint_point);
 
-    // Gripper Joint Trajectory
-    std::vector<std::string> gripper_joint_names {"hand_l_proximal_joint", "hand_r_proximal_joint"};
-
-    trajectory_msgs::JointTrajectoryPoint gripper_joint_point;
-
-    gripper_joint_trajectory_.joint_names = gripper_joint_names;
-    gripper_joint_trajectory_.points.push_back(gripper_joint_point);
-
     step_ = Initialize;
 
     reset();
@@ -71,16 +62,13 @@ private:
 
   void reset()
   {
-    instruction_msg = "";
+    instruction_msg_ = "";
     is_started_  = false;
     is_finished_ = false;
     is_failed_   = false;
 
     std::vector<double> arm_positions { 0.0, 0.0, 0.0, 0.0, 0.0 };
     arm_joint_trajectory_.points[0].positions = arm_positions;
-
-    std::vector<double> gripper_positions { 0.0, 0.0 };
-    gripper_joint_trajectory_.points[0].positions = gripper_positions;
   }
 
 
@@ -99,7 +87,7 @@ private:
     {
       if(step_==WaitForInstruction)
       {
-        instruction_msg = message->detail.c_str();
+        instruction_msg_ = message->detail.c_str();
       }
     }
     if(message->message.c_str()==MSG_TASK_SUCCEEDED)
@@ -257,9 +245,9 @@ public:
         }
         case WaitForInstruction:
         {
-          if(instruction_msg!="")
+          if(instruction_msg_!="")
           {
-            ROS_INFO("%s", instruction_msg.c_str());
+            ROS_INFO("%s", instruction_msg_.c_str());
 
             operateHand(pub_gripper_trajectory, false);
 
