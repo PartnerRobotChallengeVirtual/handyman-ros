@@ -144,23 +144,19 @@ private:
     return tf_transform;
   }
 
-  void moveBase(ros::Publisher &publisher, double linear_x, double linear_y, double linear_z, double angular_x, double angular_y, double angular_z)
+  void moveBase(ros::Publisher &publisher, double linear_x, double linear_y, double angular_z)
   {
     geometry_msgs::Twist twist;
 
     twist.linear.x  = linear_x;
     twist.linear.y  = linear_y;
-    twist.linear.z  = linear_z;
-    twist.angular.x = angular_x;
-    twist.angular.y = angular_y;
     twist.angular.z = angular_z;
-
     publisher.publish(twist);
   }
 
   void stopBase(ros::Publisher &publisher)
   {
-    moveBase(publisher, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    moveBase(publisher, 0.0, 0.0, 0.0);
   }
 
   void moveArm(ros::Publisher &publisher, const std::vector<double> &positions, ros::Duration &duration)
@@ -171,40 +167,36 @@ private:
     publisher.publish(arm_joint_trajectory_);
   }
 
-  void moveArm(ros::Publisher &publisher, const std::vector<double> &positions)
+  void operateHand(ros::Publisher &publisher, bool should_grasp)
   {
-    ros::Duration duration;
-    duration.sec = 1;
-    moveArm(publisher, positions, duration);
+    std::vector<std::string> joint_names {"hand_motor_joint"};
+    std::vector<double> positions;
+
+    if(should_grasp)
+    {
+      ROS_DEBUG("Grasp");
+      positions.push_back(-0.105);
+    }
+    else
+    {
+      ROS_DEBUG("Open hand");
+      positions.push_back(+1.239);
+    }
+
+    trajectory_msgs::JointTrajectoryPoint point;
+    point.positions = positions;
+    point.time_from_start = ros::Duration(2);
+
+    trajectory_msgs::JointTrajectory joint_trajectory;
+    joint_trajectory.joint_names = joint_names;
+    joint_trajectory.points.push_back(point);
+    publisher.publish(joint_trajectory);
   }
 
-  void grasp(ros::Publisher &publisher)
-  {
-    ros::Duration duration;
-    duration.sec = 2;
-    std::vector<double> gripper_positions { -0.05, +0.05 };
-    gripper_joint_trajectory_.points[0].positions = gripper_positions;
-    gripper_joint_trajectory_.points[0].time_from_start = duration;
-
-    publisher.publish(gripper_joint_trajectory_);
-  }
-
-  void openHand(ros::Publisher &publisher)
-  {
-    ros::Duration duration;
-    duration.sec = 2;
-    std::vector<double> gripper_positions { +0.611, -0.611 };
-    gripper_joint_trajectory_.points[0].positions = gripper_positions;
-    gripper_joint_trajectory_.points[0].time_from_start = duration;
-
-    publisher.publish(gripper_joint_trajectory_);
-  }
 
 public:
   int run(int argc, char **argv)
   {
-    ros::init(argc, argv, "handyman_sample");
-
     ros::NodeHandle node_handle;
 
     ros::Rate loop_rate(10);
@@ -219,7 +211,7 @@ public:
     node_handle.param<std::string>("pub_msg_to_moderator_topic_name",   pub_msg_to_moderator_topic_name,   "/handyman/message/to_moderator");
     node_handle.param<std::string>("pub_base_twist_topic_name",         pub_base_twist_topic_name,         "/hsrb/command_velocity");
     node_handle.param<std::string>("pub_arm_trajectory_topic_name",     pub_arm_trajectory_topic_name,     "/hsrb/arm_trajectory_controller/command");
-    node_handle.param<std::string>("pub_gripper_trajectory_topic_name", pub_gripper_trajectory_topic_name, "/hsrb/gripper_trajectory_controller/command");
+    node_handle.param<std::string>("pub_gripper_trajectory_topic_name", pub_gripper_trajectory_topic_name, "/hsrb/gripper_controller/command");
 
     init();
 
@@ -269,7 +261,7 @@ public:
           {
             ROS_INFO("%s", instruction_msg.c_str());
 
-            openHand(pub_gripper_trajectory);
+            operateHand(pub_gripper_trajectory, false);
 
             step_++;
           }
@@ -279,9 +271,9 @@ public:
         {
           tf::StampedTransform tf_transform = getTfBase(tf_listener);
 
-          if(tf_transform.getOrigin().y() >= -0.2)
+          if(tf_transform.getOrigin().y() <= +0.2)
           {
-            moveBase(pub_base_twist, +1.0, 0.0, 0.0, 0.0, 0.0, -1.0);
+            moveBase(pub_base_twist, +1.0, 0.0, 1.0);
           }
           else
           {
@@ -295,9 +287,9 @@ public:
         {
           tf::StampedTransform tf_transform = getTfBase(tf_listener);
 
-          if(tf_transform.getOrigin().y() >= -0.6)
+          if(tf_transform.getOrigin().y() <= +0.6)
           {
-            moveBase(pub_base_twist, +1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+            moveBase(pub_base_twist, +1.0, 0.0, 0.0);
           }
           else
           {
@@ -312,13 +304,13 @@ public:
         {
           tf::StampedTransform tf_transform = getTfBase(tf_listener);
 
-          if(tf_transform.getOrigin().y() >= -1.4)
+          if(tf_transform.getOrigin().y() <= +1.0)
           {
             std::vector<double> positions { 0.22, -1.57, 0.0, 0.0, 0.0 };
             ros::Duration duration;
             duration.sec = 1;
 
-            moveBase(pub_base_twist, +0.7, 0.0, 0.0, 0.0, 0.0, 0.0);
+            moveBase(pub_base_twist, +1.0, 0.0, 0.0);
             moveArm(pub_arm_trajectory, positions, duration);
           }
           else
@@ -334,14 +326,14 @@ public:
         {
           tf::StampedTransform tf_transform = getTfBase(tf_listener);
 
-          if(tf_transform.getOrigin().y() >= -1.5)
+          if(tf_transform.getOrigin().y() >= +1.2)
           {
-            moveBase(pub_base_twist, +1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+            moveBase(pub_base_twist, +0.3, 0.0, 0.0);
           }
           else
           {
             stopBase(pub_base_twist);
-            grasp(pub_gripper_trajectory);
+            operateHand(pub_gripper_trajectory, true);
 
             waiting_start_time = ros::Time::now();
             step_++;
@@ -365,7 +357,7 @@ public:
 
           if(tf_transform.getOrigin().y() <= 0.0)
           {
-            moveBase(pub_base_twist, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+            moveBase(pub_base_twist, -1.0, 0.0, 0.0);
           }
           else
           {
@@ -401,8 +393,9 @@ public:
 
 int main(int argc, char **argv)
 {
-  HandymanSample handyman_sample;
+  ros::init(argc, argv, "handyman_sample");
 
+  HandymanSample handyman_sample;
   return handyman_sample.run(argc, argv);
 };
 
