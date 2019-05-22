@@ -270,7 +270,7 @@ void HandymanTeleopKey::operateArmFlex(const double arm_flex_pos, const double w
 
 double HandymanTeleopKey::getDurationRot(const double next_pos, const double current_pos)
 {
-  return std::max<double>((std::abs(next_pos - current_pos) * 1.05), 1.0);
+  return std::max<double>((std::abs(next_pos - current_pos) * 1.2), 1.0);
 }
 
 void HandymanTeleopKey::operateHand(bool is_hand_open)
