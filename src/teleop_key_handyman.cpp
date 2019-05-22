@@ -70,8 +70,10 @@ public:
   void sendMessage(const std::string &message);
   void moveBaseTwist(double linear_x, double linear_y, double angular_z);
   void moveBaseJointTrajectory(double linear_x, double linear_y, double theta, double duration_sec);
-  void operateArm(const double arm_lift_pos, const double arm_flex_pos, const double wrist_flex_pos, const int duration_sec);
-  void operateArm(const std::string &name, const double position, const int duration_sec);
+  void operateArm(const double arm_lift_pos, const double arm_flex_pos, const double wrist_flex_pos, const double duration_sec);
+  void operateArm(const std::string &name, const double position, const double duration_sec);
+  void operateArmFlex(const double arm_flex_pos, const double wrist_flex_pos);
+  double getDurationRot(const double next_pos, const double current_pos);
   void operateHand(bool grasp);
 
   void showHelp();
@@ -225,7 +227,7 @@ void HandymanTeleopKey::moveBaseJointTrajectory(double linear_x, double linear_y
 }
 
 
-void HandymanTeleopKey::operateArm(const double arm_lift_pos, const double arm_flex_pos, const double wrist_flex_pos, const int duration_sec)
+void HandymanTeleopKey::operateArm(const double arm_lift_pos, const double arm_flex_pos, const double wrist_flex_pos, const double duration_sec)
 {
   trajectory_msgs::JointTrajectory joint_trajectory;
   joint_trajectory.joint_names.push_back("arm_lift_joint");
@@ -243,7 +245,7 @@ void HandymanTeleopKey::operateArm(const double arm_lift_pos, const double arm_f
   pub_arm_trajectory_.publish(joint_trajectory);
 }
 
-void HandymanTeleopKey::operateArm(const std::string &name, const double position, const int duration_sec)
+void HandymanTeleopKey::operateArm(const std::string &name, const double position, const double duration_sec)
 {
   if(name == "arm_lift_joint")
   {
@@ -257,6 +259,18 @@ void HandymanTeleopKey::operateArm(const std::string &name, const double positio
   {
     this->operateArm(2.0*arm_lift_joint_pos1_-arm_lift_joint_pos2_, arm_flex_joint_pos_, position, duration_sec);
   }
+}
+
+void HandymanTeleopKey::operateArmFlex(const double arm_flex_pos, const double wrist_flex_pos)
+{
+  double duration = std::max(this->getDurationRot(arm_flex_pos, arm_flex_joint_pos_), this->getDurationRot(wrist_flex_pos, wrist_flex_joint_pos_));
+
+  this->operateArm(2.0*arm_lift_joint_pos1_-arm_lift_joint_pos2_, arm_flex_pos, wrist_flex_pos, duration);
+}
+
+double HandymanTeleopKey::getDurationRot(const double next_pos, const double current_pos)
+{
+  return std::max<double>((std::abs(next_pos - current_pos) * 1.05), 1.0);
 }
 
 void HandymanTeleopKey::operateHand(bool is_hand_open)
@@ -546,25 +560,25 @@ int HandymanTeleopKey::run(int argc, char **argv)
         case KEYCODE_A:
         {
           ROS_DEBUG("Rotate Arm - Vertical");
-          operateArm(2.0*arm_lift_joint_pos1_-arm_lift_joint_pos2_, 0.0, -1.57, 1);
+          operateArmFlex(0.0, -1.57);
           break;
         }
         case KEYCODE_B:
         {
           ROS_DEBUG("Rotate Arm - Upward");
-          operateArm(2.0*arm_lift_joint_pos1_-arm_lift_joint_pos2_, -0.785, -0.785, 1);
+          operateArmFlex(-0.785, -0.785);
           break;
         }
         case KEYCODE_C:
         {
           ROS_DEBUG("Rotate Arm - Horizontal");
-          operateArm(2.0*arm_lift_joint_pos1_-arm_lift_joint_pos2_, -1.57, 0.0, 1);
+          operateArmFlex(-1.57, 0.0);
           break;
         }
         case KEYCODE_D:
         {
           ROS_DEBUG("Rotate Arm - Downward");
-          operateArm(2.0*arm_lift_joint_pos1_-arm_lift_joint_pos2_, -2.2, 0.35, 1);
+          operateArmFlex(-2.2, 0.35);
           break;
         }
         case KEYCODE_G:
