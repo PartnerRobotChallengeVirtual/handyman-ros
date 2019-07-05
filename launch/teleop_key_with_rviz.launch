@@ -9,8 +9,9 @@
 	<arg name="sub_laser_scan_topic_name"         default="/hsrb/base_scan" />
 	<arg name="rgbd_camera"                       default="head_rgbd_sensor" />
 	
-	<arg name="sigverse_ros_bridge_port"        default="50001" />
-	<arg name="ros_bridge_port"                 default="9090" />
+	<arg name="sigverse_ros_bridge_port"   default="50001" />
+	<arg name="sync_time_num"              default="1" />
+	<arg name="ros_bridge_port"            default="9090" />
 
 	<node name="teleop_key_handyman" pkg="handyman" type="teleop_key_handyman" output="screen" launch-prefix="xterm -e">
 
@@ -23,7 +24,7 @@
 	</node>
 
 	<group ns="sigverse_ros_bridge">
-		<node name="sigverse_ros_bridge" pkg="sigverse_ros_bridge" type="sigverse_ros_bridge" args="$(arg sigverse_ros_bridge_port)"/>
+		<node name="sigverse_ros_bridge" pkg="sigverse_ros_bridge" type="sigverse_ros_bridge" args="$(arg sigverse_ros_bridge_port) $(arg sync_time_num)"/>
 	</group>
 	
 	<include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" > 
